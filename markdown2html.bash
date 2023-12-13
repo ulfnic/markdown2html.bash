@@ -59,3 +59,63 @@ readarray -t line_arr < "$in_path"
 
 
 
+# Define variables and functions
+html_line_arr=()
+inside_type=
+inside_codeblock_power=
+
+line_is_codeblock_syntax() {
+	[[ $line == '```'* ]] || return 1
+	[[ ${line//'`'/} ]] && return 1
+	codeblock_power=${#line}
+	return 0
+}
+
+
+
+# Format into HTML
+for line in "${line_arr[@]}"; do
+
+	if line_is_codeblock_syntax; then
+		if [[ $inside_type == 'codeblock' ]]; then
+
+			# Ending a codeblock requires the same number of backticks used to start it.
+			if [[ $codeblock_power == $inside_codeblock_power ]]; then
+
+				# Codeblock ends
+				inside_type=
+				inside_of_codeblock_power=
+				html_line_arr+=("</code></pre>")
+				continue
+			fi
+
+			# Line is code
+			html_line_arr+=("$line")
+			continue
+		fi
+
+		# Codeblock starts
+		inside_type='codeblock'
+		inside_codeblock_power=$codeblock_power
+		html_line_arr+=("<pre><code>")
+		continue
+	fi
+
+	if [[ $inside_type == 'codeblock' ]]; then
+
+		# Line is code
+		html_line_arr+=("$line")
+		continue
+	fi
+
+	html_line_arr+=("$line"'<br />')
+
+done
+
+
+
+# Print formatted HTML
+printf '%s\n' "${html_line_arr[@]}" > "$out_path"
+
+
+
