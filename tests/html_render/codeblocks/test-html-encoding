@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -o errexit
+source ./tests/.local/lib/write-in-expect-out.sh
+
+
+{ IFS= read -r -d '' write_in || :; } <<-'EOF'
+```
+&amp;
+<a href='#'>link</a>
+```
+EOF
+
+
+{ IFS= read -r -d '' expect_out || :; } <<-'EOF'
+<pre><code>
+&amp;amp;
+&lt;a href='#'&gt;link&lt;/a&gt;
+</code></pre>
+EOF
+
+
+write_in_expect_out
+
+
+
