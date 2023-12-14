@@ -73,6 +73,15 @@ line_is_codeblock_syntax() {
 
 
 
+html_encode() {
+	local -n html_encode__str=$1
+	html_encode__str=${html_encode__str//'&'/'&amp;'}
+	html_encode__str=${html_encode__str//'<'/'&lt;'}
+	html_encode__str=${html_encode__str//'>'/'&gt;'}
+}
+
+
+
 # Format into HTML
 for line in "${line_arr[@]}"; do
 
@@ -90,6 +99,7 @@ for line in "${line_arr[@]}"; do
 			fi
 
 			# Line is code
+			html_encode 'line'
 			html_line_arr+=("$line")
 			continue
 		fi
@@ -104,6 +114,7 @@ for line in "${line_arr[@]}"; do
 	if [[ $inside_type == 'codeblock' ]]; then
 
 		# Line is code
+		html_encode 'line'
 		html_line_arr+=("$line")
 		continue
 	fi
