@@ -64,6 +64,17 @@ html_line_arr=()
 inside_type=
 inside_codeblock_power=
 
+
+
+html_encode() {
+	local -n html_encode__str=$1
+	html_encode__str=${html_encode__str//'&'/'&amp;'}
+	html_encode__str=${html_encode__str//'<'/'&lt;'}
+	html_encode__str=${html_encode__str//'>'/'&gt;'}
+}
+
+
+
 line_is_codeblock_syntax() {
 	[[ $line == '```'* ]] || return 1
 	[[ ${line//'`'/} ]] && return 1
@@ -73,11 +84,29 @@ line_is_codeblock_syntax() {
 
 
 
-html_encode() {
-	local -n html_encode__str=$1
-	html_encode__str=${html_encode__str//'&'/'&amp;'}
-	html_encode__str=${html_encode__str//'<'/'&lt;'}
-	html_encode__str=${html_encode__str//'>'/'&gt;'}
+open_inside_type() {
+	inside_type=$1
+	case $inside_type in
+		'codeblock')
+			[[ $codeblock_power ]] || print_stderr 1 '%s\n' 'open_inside_type() $codeblock_power missing'
+			inside_codeblock_power=$codeblock_power
+			html_line_arr+=('<pre><code>')
+			;;
+		*)
+			print_stderr 1 '%s\n' 'open_inside_type() unknown $inside_type: '"$inside_type"
+	esac
+}
+
+
+
+close_current_inside_type() {
+	case $inside_type in
+		'codeblock')
+			inside_codeblock_power=
+			html_line_arr+=('</code></pre>')
+			;;
+	esac
+	inside_type=
 }
 
 
@@ -92,9 +121,7 @@ for line in "${line_arr[@]}"; do
 			if [[ $codeblock_power == $inside_codeblock_power ]]; then
 
 				# Codeblock ends
-				inside_type=
-				inside_of_codeblock_power=
-				html_line_arr+=("</code></pre>")
+				close_current_inside_type
 				continue
 			fi
 
@@ -105,9 +132,7 @@ for line in "${line_arr[@]}"; do
 		fi
 
 		# Codeblock starts
-		inside_type='codeblock'
-		inside_codeblock_power=$codeblock_power
-		html_line_arr+=("<pre><code>")
+		open_inside_type 'codeblock'
 		continue
 	fi
 
