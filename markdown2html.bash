@@ -150,7 +150,8 @@ done
 
 
 
-# Print formatted HTML
+# Wrap up enclosures and print formatted HTML
+close_current_inside_type
 printf '%s\n' "${html_line_arr[@]}" > "$out_path"
 
 
