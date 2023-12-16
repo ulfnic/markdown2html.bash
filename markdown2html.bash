@@ -87,6 +87,9 @@ line_is_codeblock_syntax() {
 open_inside_type() {
 	inside_type=$1
 	case $inside_type in
+		'paragraph')
+			html_line_arr+=('<p>')
+			;;
 		'codeblock')
 			[[ $codeblock_power ]] || print_stderr 1 '%s\n' 'open_inside_type() $codeblock_power missing'
 			inside_codeblock_power=$codeblock_power
@@ -101,6 +104,9 @@ open_inside_type() {
 
 close_current_inside_type() {
 	case $inside_type in
+		'paragraph')
+			html_line_arr+=('</p>')
+			;;
 		'codeblock')
 			inside_codeblock_power=
 			html_line_arr+=('</code></pre>')
@@ -144,6 +150,13 @@ for line in "${line_arr[@]}"; do
 		continue
 	fi
 
+	# Line is paragraph related beyond this point
+	if [[ ! $line ]]; then
+		close_current_inside_type		
+		continue
+	fi
+
+	[[ ! $inside_type == 'paragraph' ]] && open_inside_type 'paragraph'
 	html_line_arr+=("$line"'<br />')
 
 done
