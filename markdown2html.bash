@@ -63,6 +63,7 @@ readarray -t line_arr < "$in_path"
 html_line_arr=()
 inside_type=
 inside_codeblock_power=
+header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
 
 
 
@@ -79,6 +80,31 @@ line_is_codeblock_syntax() {
 	[[ $line == '```'* ]] || return 1
 	[[ ${line//'`'/} ]] && return 1
 	codeblock_power=${#line}
+	return 0
+}
+
+
+
+handle_headers() {
+	[[ $line == \#* ]] || return 1
+	[[ $line =~ $header_re ]] || return 1
+	local \
+		header_level=${#BASH_REMATCH[1]} \
+		header_text=${BASH_REMATCH[2]}
+
+	# Handle trailing #s, spaces and tabs if they exist
+	header_tail=${header_text##*[! 	#]}
+	if [[ $header_tail ]]; then
+
+		# Remove tail from text
+		header_text=${header_text%"$header_tail"}
+
+		# Append tail to text allowing leading #s
+		header_text+=${header_tail%%[ 	]*}
+	fi
+
+	html_line_arr+=("<h${header_level}>${header_text}</h${header_level}>")
+
 	return 0
 }
 
@@ -149,6 +175,10 @@ for line in "${line_arr[@]}"; do
 		html_line_arr+=("$line")
 		continue
 	fi
+
+
+	handle_headers && continue
+
 
 	# Line is paragraph related beyond this point
 	if [[ ! $line ]]; then
