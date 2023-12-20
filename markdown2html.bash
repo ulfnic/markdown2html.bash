@@ -62,7 +62,8 @@ readarray -t line_arr < "$in_path"
 # Define variables and functions
 html_line_arr=()
 inside_type=
-inside_codeblock_power=
+inside_fenced_codeblock_power=
+indented_codeblock_buffer=()
 header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
 alt_header_re='^[ 	]*([=]+|[-]+)[ 	]*$'
 
@@ -77,10 +78,52 @@ html_encode() {
 
 
 
-line_is_codeblock_syntax() {
+line_is_fenced_codeblock_syntax() {
 	[[ $line == '```'* ]] || return 1
 	[[ ${line//'`'/} ]] && return 1
-	codeblock_power=${#line}
+	fenced_codeblock_power=${#line}
+	return 0
+}
+
+
+
+handle_indented_codeblocks() {
+	local re
+
+	if [[ $inside_type != 'indented_codeblock' ]]; then
+		re='^(    | ? ? ?	)([ 	]*[^ 	].*)'
+		[[ $line =~ $re ]] || return 1
+
+		# New codeblock
+		open_inside_type 'indented_codeblock'
+
+		local code_str=${BASH_REMATCH[2]}
+		html_encode code_str
+		html_line_arr+=("$code_str")
+		indented_codeblock_buffer=()
+		return 0
+	fi
+
+	re='^(    | ? ? ?	)(.+)|^[ 	]*$'
+	if [[ ! $line =~ $re ]]; then
+
+		# Close existing codeblock
+		indented_codeblock_buffer=()
+		close_current_inside_type
+		return 1
+	fi
+
+	# Continue existing codeblock
+	local code_str=${BASH_REMATCH[2]}
+
+	if [[ ! $code_str ]]; then
+		indented_codeblock_buffer+=('')
+		return 0
+	fi
+
+	html_encode code_str
+	html_line_arr+=("${indented_codeblock_buffer[@]}" "$code_str")
+	indented_codeblock_buffer=()
 	return 0
 }
 
@@ -128,11 +171,14 @@ open_inside_type() {
 		'paragraph')
 			html_line_arr+=('<p>')
 			;;
-		'codeblock')
-			[[ $codeblock_power ]] || print_stderr 1 '%s\n' 'open_inside_type() $codeblock_power missing'
-			inside_codeblock_power=$codeblock_power
+		'fenced_codeblock')
+			[[ $fenced_codeblock_power ]] || print_stderr 1 '%s\n' 'open_inside_type() $fenced_codeblock_power missing'
+			inside_fenced_codeblock_power=$fenced_codeblock_power
 			html_line_arr+=('<pre><code>')
 			;;
+		'indented_codeblock')
+			html_line_arr+=('<pre><code>')
+			;;			
 		*)
 			print_stderr 1 '%s\n' 'open_inside_type() unknown $inside_type: '"$inside_type"
 	esac
@@ -145,8 +191,11 @@ close_current_inside_type() {
 		'paragraph')
 			html_line_arr+=('</p>')
 			;;
-		'codeblock')
-			inside_codeblock_power=
+		'fenced_codeblock')
+			inside_fenced_codeblock_power=
+			html_line_arr+=('</code></pre>')
+			;;
+		'indented_codeblock')
 			html_line_arr+=('</code></pre>')
 			;;
 	esac
@@ -162,13 +211,13 @@ for line in "${line_arr[@]}"; do
 	(( line_num++ )) || :
 	[[ $skip_next_line ]] && skip_next_line= && continue
 
-	if line_is_codeblock_syntax; then
-		if [[ $inside_type == 'codeblock' ]]; then
+	if line_is_fenced_codeblock_syntax; then
+		if [[ $inside_type == 'fenced_codeblock' ]]; then
 
-			# Ending a codeblock requires the same number of backticks used to start it.
-			if [[ $codeblock_power == $inside_codeblock_power ]]; then
+			# Ending a fenced_codeblock requires the same number of backticks used to start it.
+			if [[ $fenced_codeblock_power == $inside_fenced_codeblock_power ]]; then
 
-				# Codeblock ends
+				# Fenced codeblock ends
 				close_current_inside_type
 				continue
 			fi
@@ -179,18 +228,21 @@ for line in "${line_arr[@]}"; do
 			continue
 		fi
 
-		# Codeblock starts
-		open_inside_type 'codeblock'
+		# Fenced codeblock starts
+		open_inside_type 'fenced_codeblock'
 		continue
 	fi
 
-	if [[ $inside_type == 'codeblock' ]]; then
+	if [[ $inside_type == 'fenced_codeblock' ]]; then
 
 		# Line is code
 		html_encode 'line'
 		html_line_arr+=("$line")
 		continue
 	fi
+
+
+	handle_indented_codeblocks && continue
 
 
 	handle_headers && continue
