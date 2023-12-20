@@ -64,8 +64,6 @@ html_line_arr=()
 inside_type=
 inside_fenced_codeblock_power=
 indented_codeblock_buffer=()
-header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
-alt_header_re='^[ 	]*([=]+|[-]+)[ 	]*$'
 
 
 
@@ -130,6 +128,8 @@ handle_indented_codeblocks() {
 
 
 handle_headers() {
+	local header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
+
 	[[ $line == \#* ]] || return 1
 	[[ $line =~ $header_re ]] || return 1
 	local \
@@ -155,6 +155,8 @@ handle_headers() {
 
 
 handle_alt_headers() {
+	local alt_header_re='^[ 	]*([=]+|[-]+)[ 	]*$'
+
 	# Extract alt-header syntax from the following line if any
 	[[ ${line_arr[line_num+1]} =~ $alt_header_re ]] || return 1
 	[[ ${BASH_REMATCH[1]} == '='* ]] && local h_level=1 || local h_level=2
