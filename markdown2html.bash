@@ -64,6 +64,7 @@ html_line_arr=()
 inside_type=
 inside_codeblock_power=
 header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
+alt_header_re='^[ 	]*([=]+|[-]+)[ 	]*$'
 
 
 
@@ -110,6 +111,17 @@ handle_headers() {
 
 
 
+handle_alt_headers() {
+	# Extract alt-header syntax from the following line if any
+	[[ ${line_arr[line_num+1]} =~ $alt_header_re ]] || return 1
+	[[ ${BASH_REMATCH[1]} == '='* ]] && local h_level=1 || local h_level=2
+	html_line_arr+=("<h${h_level}>${line}</h${h_level}>")
+	skip_next_line=1
+	return 0
+}
+
+
+
 open_inside_type() {
 	inside_type=$1
 	case $inside_type in
@@ -144,7 +156,11 @@ close_current_inside_type() {
 
 
 # Format into HTML
+skip_next_line=
+line_num=-1
 for line in "${line_arr[@]}"; do
+	(( line_num++ )) || :
+	[[ $skip_next_line ]] && skip_next_line= && continue
 
 	if line_is_codeblock_syntax; then
 		if [[ $inside_type == 'codeblock' ]]; then
@@ -178,6 +194,7 @@ for line in "${line_arr[@]}"; do
 
 
 	handle_headers && continue
+	handle_alt_headers && continue
 
 
 	# Line is paragraph related beyond this point
