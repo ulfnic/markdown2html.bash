@@ -67,6 +67,14 @@ indented_codeblock_buffer=()
 
 
 
+trim_whitespace(){
+	local -n 'trim_whitespace__str='"$1"
+	trim_whitespace__str="${trim_whitespace__str#"${trim_whitespace__str%%[^[:space:]]*}"}"
+	trim_whitespace__str="${trim_whitespace__str%"${trim_whitespace__str##*[^[:space:]]}"}"
+}
+
+
+
 html_encode() {
 	local -n html_encode__str=$1
 	html_encode__str=${html_encode__str//'&'/'&amp;'}
@@ -258,6 +266,7 @@ for line in "${line_arr[@]}"; do
 	fi
 
 	[[ ! $inside_type == 'paragraph' ]] && open_inside_type 'paragraph'
+	trim_whitespace line
 	html_line_arr+=("$line"'<br />')
 
 done
