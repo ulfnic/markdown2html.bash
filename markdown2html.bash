@@ -89,7 +89,7 @@ handle_indented_codeblocks() {
 	local re
 
 	if [[ $inside_type != 'indented_codeblock' ]]; then
-		re='^(    | ? ? ?	)([ 	]*[^ 	].*)'
+		re='^(    | ? ? ?	)([[:blank:]]*[^[:blank:]].*)'
 		[[ $line =~ $re ]] || return 1
 
 		# New codeblock
@@ -102,7 +102,7 @@ handle_indented_codeblocks() {
 		return 0
 	fi
 
-	re='^(    | ? ? ?	)(.+)|^[ 	]*$'
+	re='^(    | ? ? ?	)(.+)|^[[:blank:]]*$'
 	if [[ ! $line =~ $re ]]; then
 
 		# Close existing codeblock
@@ -128,7 +128,7 @@ handle_indented_codeblocks() {
 
 
 handle_headers() {
-	local header_re='^(##?#?#?#?#?)[ 	][ 	]*(.*)'
+	local header_re='^(##?#?#?#?#?)[[:blank:]][[:blank:]]*(.*)'
 
 	[[ $line == \#* ]] || return 1
 	[[ $line =~ $header_re ]] || return 1
@@ -137,14 +137,14 @@ handle_headers() {
 		header_text=${BASH_REMATCH[2]}
 
 	# Handle trailing #s, spaces and tabs if they exist
-	header_tail=${header_text##*[! 	#]}
+	header_tail=${header_text##*[![:blank:]#]}
 	if [[ $header_tail ]]; then
 
 		# Remove tail from text
 		header_text=${header_text%"$header_tail"}
 
 		# Append tail to text allowing leading #s
-		header_text+=${header_tail%%[ 	]*}
+		header_text+=${header_tail%%[[:blank:]]*}
 	fi
 
 	html_line_arr+=("<h${header_level}>${header_text}</h${header_level}>")
@@ -155,7 +155,7 @@ handle_headers() {
 
 
 handle_alt_headers() {
-	local alt_header_re='^[ 	]*([=]+|[-]+)[ 	]*$'
+	local alt_header_re='^[[:blank:]]*([=]+|[-]+)[[:blank:]]*$'
 
 	# Extract alt-header syntax from the following line if any
 	[[ ${line_arr[line_num+1]} =~ $alt_header_re ]] || return 1
