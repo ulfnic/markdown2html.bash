@@ -76,10 +76,21 @@ trim_whitespace(){
 
 
 html_encode() {
-	local -n html_encode__str=$1
+	local -n 'html_encode__str='"$1"
 	html_encode__str=${html_encode__str//'&'/'&amp;'}
 	html_encode__str=${html_encode__str//'<'/'&lt;'}
 	html_encode__str=${html_encode__str//'>'/'&gt;'}
+}
+
+
+
+html_encode_incl_quotes(){
+	local -n 'html_encode_incl_quotes__str='"$1"
+	html_encode_incl_quotes__str=${html_encode_incl_quotes__str//'&'/'&amp;'}
+	html_encode_incl_quotes__str=${html_encode_incl_quotes__str//'<'/'&lt;'}
+	html_encode_incl_quotes__str=${html_encode_incl_quotes__str//'>'/'&gt;'}
+	html_encode_incl_quotes__str=${html_encode_incl_quotes__str//'"'/'&#34;'}
+	html_encode_incl_quotes__str=${html_encode_incl_quotes__str//"'"/'&#39;'}
 }
 
 
@@ -104,7 +115,7 @@ handle_indented_codeblocks() {
 		open_inside_type 'indented_codeblock'
 
 		local code_str=${BASH_REMATCH[2]}
-		html_encode code_str
+		html_encode_incl_quotes code_str
 		html_line_arr+=("$code_str")
 		indented_codeblock_buffer=()
 		return 0
