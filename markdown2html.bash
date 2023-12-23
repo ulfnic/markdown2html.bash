@@ -96,9 +96,16 @@ html_encode_incl_quotes(){
 
 
 line_is_fenced_codeblock_syntax() {
+	# Test if the line is a codeblock
 	[[ $line == '```'* ]] || return 1
-	[[ ${line//'`'/} ]] && return 1
-	fenced_codeblock_power=${#line}
+
+	# Assign codeblock's power and lang
+	local re='^(`+)[[:blank:]]*([^[:blank:]]*)'
+	[[ $line =~ $re ]]
+	fenced_codeblock_power=${#BASH_REMATCH[1]}
+	fenced_codeblock_lang=${BASH_REMATCH[2]}
+	[[ $fenced_codeblock_lang ]] && html_encode fenced_codeblock_lang
+
 	return 0
 }
 
@@ -193,9 +200,15 @@ open_inside_type() {
 			html_line_arr+=('<p>')
 			;;
 		'fenced_codeblock')
+			local code_tag_append
+
 			[[ $fenced_codeblock_power ]] || print_stderr 1 '%s\n' 'open_inside_type() $fenced_codeblock_power missing'
 			inside_fenced_codeblock_power=$fenced_codeblock_power
-			html_line_arr+=('<pre><code>')
+
+			# If a lang was specified prepare a class attribute
+			[[ $fenced_codeblock_lang ]] && code_tag_append=' class="language-'$fenced_codeblock_lang'"'
+
+			html_line_arr+=('<pre><code'"$code_tag_append"'>')
 			;;
 		'indented_codeblock')
 			html_line_arr+=('<pre><code>')
