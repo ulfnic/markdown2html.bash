@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -o errexit
+source ./tests/.local/lib/write-in-expect-out.sh
+test_exit_code=0
+
+
+
+run() {
+	{ IFS= read -r -d '' write_in || :; } <<-EOF
+	\`\`\`${1}bash${2}
+	text
+	\`\`\`
+	EOF
+
+
+	{ IFS= read -r -d '' expect_out || :; } <<-EOF
+	<pre><code class="language-bash">
+	text
+	</code></pre>
+	EOF
+
+
+	write_in_expect_out || test_exit_code=1
+}
+
+
+run '' ''
+
+# spaces and tabs
+run ' 	' ' 	'
+
+
+exit "$test_exit_code"
+
+
+
+
