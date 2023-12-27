@@ -29,7 +29,7 @@ out_path='/dev/fd/1'
 [[ $1 ]] || help_doc 0
 while [[ $1 ]]; do
 	case $1 in
-		'-O')
+		'-O'|'--output-file')
 			shift; [[ $1 == '-' ]] && out_path='/dev/fd/1' || out_path=$1
 			;;
 		'--help'|'-h')
