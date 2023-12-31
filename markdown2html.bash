@@ -194,6 +194,7 @@ handle_alt_headers() {
 
 
 open_inside_type() {
+	[[ $inside_type ]] && close_current_inside_type "$inside_type"
 	inside_type=$1
 	case $inside_type in
 		'paragraph')
